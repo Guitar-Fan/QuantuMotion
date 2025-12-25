@@ -72,6 +72,7 @@ export interface SimulationState {
   timeScale: number;
   magneticField: Vector3; // B-field vector (Tesla-equivalent)
   showFieldVectors: boolean; // Visualize E-field grid
+  funMode: boolean; // Toggles Emoji/Cartoon mode
 }
 
 export interface SelectionItem {

@@ -21,6 +21,23 @@ export const THERMAL_EXPANSION_COEFF = 0.008; // 0.8% length increase per Sim Te
 export const FIELD_GRID_SIZE = 20; // 20x20 grid
 export const FIELD_GRID_STEP = (CONTAINER_SIZE * 2) / FIELD_GRID_SIZE;
 
+// Fun Mode Mappings (Creativity Factor)
+export const ATOM_EMOJIS: Record<string, string> = {
+  'H': '🎈',   // Hydrogen: Light as a balloon
+  'He': '🐿️',  // Helium: Chipmunk voice
+  'Li': '🔋',  // Lithium: Battery
+  'Be': '🛸',  // Beryllium: Sci-fi metal
+  'C': '✏️',   // Carbon: Graphite pencil
+  'N': '🥶',   // Nitrogen: Liquid nitrogen cold
+  'O': '😤',   // Oxygen: Breathing
+  'F': '🪥',   // Fluorine: Toothpaste
+  'Ne': '🚥',  // Neon: Lights
+  'Na': '🧂',  // Sodium: Salt
+  'P': '🧨',   // Phosphorus: Matches
+  'S': '🦨',   // Sulfur: Stinky
+  'Cl': '🏊',  // Chlorine: Pool
+};
+
 // Scale: 0-10 Simulation Temp Units. 
 // Roughly: 0=0K, 3=300K (Room), 7=1000K, 10=Plasma level.
 // Water MP=2.7, BP=3.7 (Made up to fit user slider nicely)

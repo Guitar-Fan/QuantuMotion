@@ -4,7 +4,7 @@ import { SimulationState, AtomData, AtomType, PhotonData, SelectionItem } from '
 import { createWaterMolecule, createSaltLattice, ATOM_CONFIGS, MOLECULE_TEMPLATES } from './constants';
 import { Vector3 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { Atom, Zap, Play, Pause, Thermometer, RotateCcw, Microscope, Beaker, Layers, Magnet, Grid } from 'lucide-react';
+import { Atom, Zap, Play, Pause, Thermometer, RotateCcw, Microscope, Beaker, Layers, Magnet, Grid, PartyPopper } from 'lucide-react';
 
 const INITIAL_STATE: SimulationState = {
   atoms: [],
@@ -15,6 +15,7 @@ const INITIAL_STATE: SimulationState = {
   timeScale: 1.0,
   magneticField: new Vector3(0, 0, 0),
   showFieldVectors: false,
+  funMode: false,
 };
 
 const App: React.FC = () => {
@@ -117,6 +118,16 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-2 pointer-events-auto">
+            {/* Fun Mode Toggle */}
+            <button 
+                onClick={() => setSimulationState(s => ({...s, funMode: !s.funMode}))} 
+                className={`p-3 rounded-xl border flex items-center gap-2 font-bold transition-all ${simulationState.funMode ? 'bg-pink-600 border-pink-400 scale-105' : 'bg-black/60 border-white/10 hover:bg-white/10'}`}
+                title="Fun Mode: Reality Filter"
+            >
+                <PartyPopper className="w-5 h-5" />
+                {simulationState.funMode && <span className="text-xs">Cartoon!</span>}
+            </button>
+            
             {/* Bank Toggle */}
             <button 
                 onClick={() => setShowBank(!showBank)} 

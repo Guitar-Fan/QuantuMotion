@@ -5,7 +5,7 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { Vector3, Color } from 'three';
 import { AtomData, BondData, PhotonData, SimulationState, ElectronState, SelectionItem, AtomType, MatterState } from '../types';
-import { K_COULOMB, DAMPING, LJ_EPSILON, LJ_SIGMA_SCALE, ATOM_CONFIGS, BOND_FORM_RADIUS, CONTAINER_SIZE, PROXIMITY_LIMIT, BOND_STRENGTH_COVALENT, BOND_STRENGTH_IONIC, BOND_BREAK_RATIO, THERMAL_EXPANSION_COEFF, FIELD_GRID_SIZE, FIELD_GRID_STEP, generateElectrons, createMoleculeFromTemplate } from '../constants';
+import { K_COULOMB, DAMPING, LJ_EPSILON, LJ_SIGMA_SCALE, ATOM_CONFIGS, ATOM_EMOJIS, BOND_FORM_RADIUS, CONTAINER_SIZE, PROXIMITY_LIMIT, BOND_STRENGTH_COVALENT, BOND_STRENGTH_IONIC, BOND_BREAK_RATIO, THERMAL_EXPANSION_COEFF, FIELD_GRID_SIZE, FIELD_GRID_STEP, generateElectrons, createMoleculeFromTemplate } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 
 // Fix: Augment JSX.IntrinsicElements to include Three.js elements
@@ -185,14 +185,16 @@ const Electron = ({
   color, 
   atomPos, 
   onSelect,
-  isSelected
+  isSelected,
+  funMode
 }: { 
   state: ElectronState, 
   atomRadius: number, 
   color: string, 
   atomPos: Vector3,
   onSelect: (e: ThreeEvent<MouseEvent>, elState: ElectronState, pos: Vector3) => void,
-  isSelected: boolean
+  isSelected: boolean,
+  funMode: boolean
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   
@@ -235,24 +237,39 @@ const Electron = ({
 
   return (
     <group>
-      {state.type === 'valence' && (
+      {!funMode && state.type === 'valence' && (
         <Trail width={0.1} length={3} color={color} attenuation={(t) => t * t}>
           <mesh position={[0,0,0]} /> 
         </Trail>
       )}
-      <mesh 
-        ref={meshRef} 
-        onClick={(e) => {
-            const worldPos = new Vector3();
-            e.object.getWorldPosition(worldPos);
-            onSelect(e, state, worldPos);
-        }}
-        onPointerOver={() => document.body.style.cursor = 'pointer'}
-        onPointerOut={() => document.body.style.cursor = 'default'}
-      >
-        <sphereGeometry args={[size, 8, 8]} />
-        <meshBasicMaterial color={isSelected ? '#ffff00' : displayColor} toneMapped={false} />
-      </mesh>
+      
+      {funMode ? (
+        <group ref={meshRef} 
+            onClick={(e) => {
+                const worldPos = new Vector3();
+                e.object.getWorldPosition(worldPos);
+                onSelect(e, state, worldPos);
+            }}
+        >
+             <Billboard>
+                <Text fontSize={0.2} anchorX="center" anchorY="middle">🐝</Text>
+             </Billboard>
+        </group>
+      ) : (
+        <mesh 
+            ref={meshRef} 
+            onClick={(e) => {
+                const worldPos = new Vector3();
+                e.object.getWorldPosition(worldPos);
+                onSelect(e, state, worldPos);
+            }}
+            onPointerOver={() => document.body.style.cursor = 'pointer'}
+            onPointerOut={() => document.body.style.cursor = 'default'}
+        >
+            <sphereGeometry args={[size, 8, 8]} />
+            <meshBasicMaterial color={isSelected ? '#ffff00' : displayColor} toneMapped={false} />
+        </mesh>
+      )}
     </group>
   );
 };
@@ -265,7 +282,8 @@ const Nucleus = ({
   onSelect, 
   onElectronSelect,
   selectedElectronIds,
-  simTemp
+  simTemp,
+  funMode
 }: { 
   atom: AtomData; 
   activeBondCount: number;
@@ -275,6 +293,7 @@ const Nucleus = ({
   onElectronSelect: (e: ThreeEvent<MouseEvent>, el: ElectronState, pos: Vector3) => void;
   selectedElectronIds: string[];
   simTemp: number;
+  funMode: boolean;
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   
@@ -298,15 +317,25 @@ const Nucleus = ({
   return (
     <group ref={groupRef}>
       <group onClick={(e) => { e.stopPropagation(); onSelect(atom); }}>
-        <Sphere args={[0.25, 16, 16]}>
-            <meshStandardMaterial 
-            color={atom.color} 
-            emissive={isSelected ? '#ffffff' : atom.color}
-            emissiveIntensity={isSelected ? 1.0 : 0.5}
-            roughness={0.1}
-            />
-        </Sphere>
-        <pointLight color={atom.color} distance={4} intensity={1.5} decay={2} />
+        {funMode ? (
+            <Billboard>
+                <Text fontSize={atom.radius * 2.5} anchorX="center" anchorY="middle">
+                    {ATOM_EMOJIS[atom.type] || '⚫'}
+                </Text>
+            </Billboard>
+        ) : (
+            <>
+                <Sphere args={[0.25, 16, 16]}>
+                    <meshStandardMaterial 
+                    color={atom.color} 
+                    emissive={isSelected ? '#ffffff' : atom.color}
+                    emissiveIntensity={isSelected ? 1.0 : 0.5}
+                    roughness={0.1}
+                    />
+                </Sphere>
+                <pointLight color={atom.color} distance={4} intensity={1.5} decay={2} />
+            </>
+        )}
         
         {/* Info Label */}
         <Billboard position={[0, 0.7, 0]} follow={true}>
@@ -335,20 +364,23 @@ const Nucleus = ({
             atomPos={atom.position}
             onSelect={onElectronSelect}
             isSelected={selectedElectronIds.includes(e.id)}
+            funMode={funMode}
         />
       ))}
       
-      <Sphere args={[atom.radius, 32, 32]}>
-        <meshPhysicalMaterial 
-          color={atom.color}
-          transparent
-          opacity={0.03}
-          roughness={0}
-          transmission={0.9}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </Sphere>
+      {!funMode && (
+        <Sphere args={[atom.radius, 32, 32]}>
+            <meshPhysicalMaterial 
+            color={atom.color}
+            transparent
+            opacity={0.03}
+            roughness={0}
+            transmission={0.9}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            />
+        </Sphere>
+      )}
     </group>
   );
 };
@@ -963,6 +995,7 @@ const SceneContent: React.FC<SceneContentProps> = ({
                 onElectronSelect={handleElectronSelect}
                 selectedElectronIds={selection.filter(s => s.type === 'electron').map(s => s.id)}
                 simTemp={stateRef.current.temperature}
+                funMode={stateRef.current.funMode}
             />
         );
       })}
