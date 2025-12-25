@@ -1,0 +1,5 @@
+{
+  "name": "QuantuMotion",
+  "description": "An advanced, interactive 3D electromagnetic particle simulation. Visualize atomic structures, chemical bonds, and photon interactions with real-time physics using React Three Fiber.",
+  "requestFramePermissions": []
+}
