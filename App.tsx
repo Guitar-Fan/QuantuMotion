@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Scene } from './components/Scene';
-import { SimulationState, AtomData, AtomType, PhotonData, SelectionItem } from './types';
+import { SimulationState, AtomData, AtomType, PhotonData, SelectionItem, ToolMode } from './types';
 import { createWaterMolecule, createSaltLattice, ATOM_CONFIGS, MOLECULE_TEMPLATES } from './constants';
 import { Vector3 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import { Atom, Zap, Play, Pause, Thermometer, RotateCcw, Microscope, Beaker, Layers, Magnet, Grid, PartyPopper } from 'lucide-react';
+import { Atom, Zap, Play, Pause, Thermometer, RotateCcw, Microscope, Beaker, Layers, Magnet, Grid, PartyPopper, MousePointer2, Tornado, Bomb } from 'lucide-react';
 
 const INITIAL_STATE: SimulationState = {
   atoms: [],
@@ -16,6 +16,7 @@ const INITIAL_STATE: SimulationState = {
   magneticField: new Vector3(0, 0, 0),
   showFieldVectors: false,
   funMode: false,
+  activeTool: 'cursor',
 };
 
 const App: React.FC = () => {
@@ -60,11 +61,18 @@ const App: React.FC = () => {
         newAtoms = [p1, p2];
     }
 
-    setSimulationState({
+    // Fix: Preserve view settings (Fun Mode, Field Vis, etc.) when resetting atoms
+    setSimulationState(prev => ({
       ...INITIAL_STATE,
       atoms: newAtoms,
       bonds: newBonds,
-    });
+      funMode: prev.funMode,
+      showFieldVectors: prev.showFieldVectors,
+      magneticField: prev.magneticField, 
+      temperature: prev.temperature,
+      isRunning: prev.isRunning,
+      activeTool: 'cursor'
+    }));
     setSelection([]);
   };
 
@@ -93,7 +101,20 @@ const App: React.FC = () => {
   const handleDragStart = (e: React.DragEvent, type: 'atom' | 'molecule', key: string) => {
       e.dataTransfer.setData('application/json', JSON.stringify({ type, key }));
       e.dataTransfer.effectAllowed = 'copy';
+      // Ensure we are in cursor mode when dragging
+      setSimulationState(prev => ({...prev, activeTool: 'cursor'}));
   };
+
+  const ToolButton = ({ tool, icon: Icon, label, colorClass }: { tool: ToolMode, icon: any, label: string, colorClass: string }) => (
+      <button 
+        onClick={() => setSimulationState(s => ({...s, activeTool: tool}))}
+        className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${simulationState.activeTool === tool ? `${colorClass} scale-110 shadow-lg` : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+        title={label}
+      >
+          <Icon className="w-5 h-5 mb-1" />
+          <span className="text-[9px] uppercase font-bold">{label}</span>
+      </button>
+  );
 
   return (
     <div className="relative w-full h-screen bg-black text-white font-sans overflow-hidden">
@@ -108,16 +129,16 @@ const App: React.FC = () => {
 
       {/* Top HUD */}
       <div className="absolute top-0 left-0 w-full p-4 pointer-events-none flex justify-between items-start z-50">
-        <div className="bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 pointer-events-auto">
+        <div className="bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 pointer-events-auto" onPointerDown={(e) => e.stopPropagation()}>
            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
-             Electromagnetic Field Sim
+             QuantuMotion
            </h1>
            <p className="text-xs text-gray-400 max-w-[250px]">
              Visualize Electric Fields (Coulomb), Magnetic Forces (Lorentz), and Atomic Interactions.
            </p>
         </div>
 
-        <div className="flex flex-col gap-2 pointer-events-auto">
+        <div className="flex flex-col gap-2 pointer-events-auto" onPointerDown={(e) => e.stopPropagation()}>
             {/* Fun Mode Toggle */}
             <button 
                 onClick={() => setSimulationState(s => ({...s, funMode: !s.funMode}))} 
@@ -141,7 +162,10 @@ const App: React.FC = () => {
 
       {/* Element Bank Sidebar */}
       {showBank && (
-          <div className="absolute top-20 right-4 w-64 h-[calc(100vh-140px)] bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl flex flex-col pointer-events-auto z-40 overflow-hidden">
+          <div 
+            className="absolute top-20 right-4 w-64 h-[calc(100vh-140px)] bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl flex flex-col pointer-events-auto z-40 overflow-hidden"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
               <div className="p-4 border-b border-white/10 bg-white/5">
                   <h2 className="font-bold flex items-center gap-2"><Layers className="w-4 h-4 text-purple-400"/> Charged Particles</h2>
                   <p className="text-[10px] text-gray-400 mt-1">Drag charges into the field</p>
@@ -220,45 +244,45 @@ const App: React.FC = () => {
       )}
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-black/70 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-4 shadow-2xl pointer-events-auto z-50">
+      <div 
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl bg-black/70 backdrop-blur-lg border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-4 shadow-2xl pointer-events-auto z-50"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         
-        {/* Main Controls */}
-        <div className="flex flex-col md:flex-row w-full gap-6 items-center">
-            <div className="flex items-center gap-2">
-            <button 
-                onClick={togglePlay}
-                className={`p-3 rounded-full transition-all ${!simulationState.isRunning ? 'bg-orange-500 hover:bg-orange-400 text-black' : 'bg-white/10 hover:bg-white/20'}`}
-            >
-                {simulationState.isRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
-            </button>
-            <button 
-                onClick={() => resetSimulation('dipole')}
-                className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-                title="Reset"
-            >
-                <RotateCcw className="w-5 h-5" />
-            </button>
+        {/* Main Controls Row */}
+        <div className="flex flex-col md:flex-row w-full gap-4 items-center">
+            
+            {/* Physics Controls */}
+            <div className="flex items-center gap-2 border-r border-white/10 pr-4">
+                <button 
+                    onClick={togglePlay}
+                    className={`p-3 rounded-full transition-all ${!simulationState.isRunning ? 'bg-orange-500 hover:bg-orange-400 text-black' : 'bg-white/10 hover:bg-white/20'}`}
+                    title="Play/Pause Physics"
+                >
+                    {simulationState.isRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
+                </button>
+                <button 
+                    onClick={() => resetSimulation('dipole')}
+                    className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all"
+                    title="Reset Simulation"
+                >
+                    <RotateCcw className="w-5 h-5" />
+                </button>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <div className="flex flex-col gap-1">
-                    <div className="flex justify-between text-xs text-gray-400">
-                        <span className="flex items-center gap-1"><Grid className="w-3 h-3"/> E-Field Vis</span>
-                        <span className={simulationState.showFieldVectors ? "text-green-400" : "text-gray-500"}>
-                            {simulationState.showFieldVectors ? "ON" : "OFF"}
-                        </span>
-                    </div>
-                    <button 
-                        onClick={() => setSimulationState(s => ({...s, showFieldVectors: !s.showFieldVectors}))}
-                        className={`w-full h-6 rounded text-xs font-bold transition-all ${simulationState.showFieldVectors ? 'bg-green-500/20 text-green-300 border border-green-500/50' : 'bg-white/5 text-gray-400 border border-white/10'}`}
-                    >
-                        Toggle Field Map
-                    </button>
-                </div>
+            {/* INTERACTIVE TOOLS */}
+            <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+                <ToolButton tool="cursor" icon={MousePointer2} label="Move" colorClass="bg-blue-600 text-white" />
+                <ToolButton tool="lightning" icon={Zap} label="Zap" colorClass="bg-yellow-500 text-black" />
+                <ToolButton tool="vortex" icon={Tornado} label="Vortex" colorClass="bg-purple-600 text-white" />
+                <ToolButton tool="blast" icon={Bomb} label="Blast" colorClass="bg-red-600 text-white" />
+            </div>
 
+            {/* Sliders */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full pl-2">
                 <div className="flex flex-col gap-1">
                     <div className="flex justify-between text-xs text-gray-400">
-                        <span className="flex items-center gap-1"><Magnet className="w-3 h-3"/> B-Field (Z-axis)</span>
+                        <span className="flex items-center gap-1"><Magnet className="w-3 h-3"/> B-Field (Z)</span>
                         <span>{simulationState.magneticField.z.toFixed(1)} T</span>
                     </div>
                     <input 
@@ -268,18 +292,30 @@ const App: React.FC = () => {
                         className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     />
                 </div>
-            </div>
 
-            <div className="flex gap-2">
-                <div className="flex flex-col gap-1 w-24">
-                    <span className="text-[10px] text-gray-400">Temp (K)</span>
+                <div className="flex flex-col gap-1">
+                     <div className="flex justify-between text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><Thermometer className="w-3 h-3"/> Temp (K)</span>
+                        <span>{(simulationState.temperature * 100).toFixed(0)}</span>
+                    </div>
                     <input 
-                        type="range" min="0" max="10" step="0.1"
+                        type="range" min="0" max="50" step="0.5"
                         value={simulationState.temperature}
                         onChange={(e) => setSimulationState(s => ({...s, temperature: parseFloat(e.target.value)}))}
                         className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-orange-500"
                     />
                 </div>
+            </div>
+
+            {/* Field Toggle */}
+             <div className="flex flex-col gap-1 w-24">
+                <button 
+                    onClick={() => setSimulationState(s => ({...s, showFieldVectors: !s.showFieldVectors}))}
+                    className={`w-full h-full rounded-lg text-[10px] font-bold transition-all border p-2 flex flex-col items-center justify-center ${simulationState.showFieldVectors ? 'bg-green-500/20 text-green-300 border-green-500/50' : 'bg-white/5 text-gray-400 border-white/10'}`}
+                >
+                    <Grid className="w-4 h-4 mb-1" />
+                    {simulationState.showFieldVectors ? "Field ON" : "Field OFF"}
+                </button>
             </div>
         </div>
       </div>

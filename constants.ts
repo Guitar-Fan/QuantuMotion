@@ -3,44 +3,40 @@ import { Vector3 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
 
 // Physics Constants
-export const K_COULOMB = 350.0; // Increased from 120 to 350 for noticeable attraction
-export const DAMPING = 0.98; // Slightly less damping to allow magnetic orbits
+export const K_COULOMB = 350.0; 
+export const DAMPING = 0.98; 
 export const LJ_EPSILON = 5.0; 
 export const LJ_SIGMA_SCALE = 0.85; 
-export const BOND_FORM_RADIUS = 1.4; 
+export const BOND_FORM_RADIUS = 1.3; // Reduced from 1.4 to require closer proximity
 export const CONTAINER_SIZE = 25.0; 
 export const PROXIMITY_LIMIT = 15.0; 
-export const BOND_STRENGTH_COVALENT = 800;
-export const BOND_STRENGTH_IONIC = 600;
+export const BOND_STRENGTH_COVALENT = 1200; // Increased base strength
+export const BOND_STRENGTH_IONIC = 800;     // Increased base strength
 
 // Bond Dynamics
-export const BOND_BREAK_RATIO = 1.4; // Break if dist > 1.4 * restLength
-export const THERMAL_EXPANSION_COEFF = 0.008; // 0.8% length increase per Sim Temp Unit
+export const BOND_BREAK_RATIO = 2.0; // Increased to allow more stretch before mechanical snap, relying on thermal breaking
+export const THERMAL_EXPANSION_COEFF = 0.005; 
 
 // Visualization
-export const FIELD_GRID_SIZE = 20; // 20x20 grid
+export const FIELD_GRID_SIZE = 20; 
 export const FIELD_GRID_STEP = (CONTAINER_SIZE * 2) / FIELD_GRID_SIZE;
 
 // Fun Mode Mappings (Creativity Factor)
 export const ATOM_EMOJIS: Record<string, string> = {
-  'H': '🎈',   // Hydrogen: Light as a balloon
-  'He': '🐿️',  // Helium: Chipmunk voice
-  'Li': '🔋',  // Lithium: Battery
-  'Be': '🛸',  // Beryllium: Sci-fi metal
-  'C': '✏️',   // Carbon: Graphite pencil
-  'N': '🥶',   // Nitrogen: Liquid nitrogen cold
-  'O': '😤',   // Oxygen: Breathing
-  'F': '🪥',   // Fluorine: Toothpaste
-  'Ne': '🚥',  // Neon: Lights
-  'Na': '🧂',  // Sodium: Salt
-  'P': '🧨',   // Phosphorus: Matches
-  'S': '🦨',   // Sulfur: Stinky
-  'Cl': '🏊',  // Chlorine: Pool
+  'H': '🎈',   // Hydrogen
+  'He': '🐿️',  // Helium
+  'Li': '🔋',  // Lithium
+  'Be': '🛸',  // Beryllium
+  'C': '✏️',   // Carbon
+  'N': '🥶',   // Nitrogen
+  'O': '😤',   // Oxygen
+  'F': '🪥',   // Fluorine
+  'Ne': '🚥',  // Neon
+  'Na': '🧂',  // Sodium
+  'P': '🧨',   // Phosphorus
+  'S': '🦨',   // Sulfur
+  'Cl': '🏊',  // Chlorine
 };
-
-// Scale: 0-10 Simulation Temp Units. 
-// Roughly: 0=0K, 3=300K (Room), 7=1000K, 10=Plasma level.
-// Water MP=2.7, BP=3.7 (Made up to fit user slider nicely)
 
 const assignOrbitals = (n: number, sub: 's'|'p', count: number, startIdx: number = 0): { type: OrbitalType, isValence: boolean }[] => {
     const orbitals: { type: OrbitalType, isValence: boolean }[] = [];
@@ -85,7 +81,7 @@ export const ATOM_CONFIGS: Record<AtomType, {
   },
   [AtomType.Lithium]: {
     mass: 7, charge: 1, radius: 1.2, color: '#CC80FF', atomicNumber: 3, valenceCount: 1, electronegativity: 0.98, maxBonds: 1,
-    meltingPoint: 4.5, boilingPoint: 8.0, // Metal
+    meltingPoint: 4.5, boilingPoint: 8.0, 
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 1)]
   },
   [AtomType.Beryllium]: {
@@ -95,22 +91,22 @@ export const ATOM_CONFIGS: Record<AtomType, {
   },
   [AtomType.Carbon]: { 
     mass: 12, charge: 0, radius: 0.9, color: '#909090', atomicNumber: 6, valenceCount: 4, electronegativity: 2.55, maxBonds: 4,
-    meltingPoint: 9.0, boilingPoint: 9.8, // Diamond/Graphite very stable
+    meltingPoint: 35.0, boilingPoint: 48.0, // High MP/BP for carbon structures
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 2)]
   },
   [AtomType.Nitrogen]: {
     mass: 14, charge: -3, radius: 0.85, color: '#3050F8', atomicNumber: 7, valenceCount: 5, electronegativity: 3.04, maxBonds: 4,
-    meltingPoint: 0.8, boilingPoint: 1.5,
+    meltingPoint: 0.6, boilingPoint: 0.7, // Low for bulk N, but N2 bond is strong (handled by chemistry logic)
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 3)]
   },
   [AtomType.Oxygen]: { 
     mass: 16, charge: -2, radius: 0.8, color: '#FF4136', atomicNumber: 8, valenceCount: 6, electronegativity: 3.44, maxBonds: 2,
-    meltingPoint: 0.9, boilingPoint: 1.8,
+    meltingPoint: 0.5, boilingPoint: 0.9,
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 4)]
   },
   [AtomType.Fluorine]: {
     mass: 19, charge: -1, radius: 0.7, color: '#90E050', atomicNumber: 9, valenceCount: 7, electronegativity: 3.98, maxBonds: 1,
-    meltingPoint: 0.8, boilingPoint: 1.4,
+    meltingPoint: 0.5, boilingPoint: 0.8,
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 5)]
   },
   [AtomType.Neon]: {
@@ -120,22 +116,22 @@ export const ATOM_CONFIGS: Record<AtomType, {
   },
   [AtomType.Sodium]: { 
     mass: 23, charge: 1, radius: 1.1, color: '#AB78FF', atomicNumber: 11, valenceCount: 1, electronegativity: 0.93, maxBonds: 1,
-    meltingPoint: 3.5, boilingPoint: 6.0, // Sodium metal
+    meltingPoint: 3.7, boilingPoint: 8.8, 
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 6), ...assignOrbitals(3, 's', 1)]
   },
   [AtomType.Phosphorus]: {
     mass: 31, charge: -3, radius: 1.1, color: '#FF8000', atomicNumber: 15, valenceCount: 5, electronegativity: 2.19, maxBonds: 5,
-    meltingPoint: 2.0, boilingPoint: 5.0,
+    meltingPoint: 3.1, boilingPoint: 5.5,
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 6), ...assignOrbitals(3, 's', 2), ...assignOrbitals(3, 'p', 3)]
   },
   [AtomType.Sulfur]: {
     mass: 32, charge: -2, radius: 1.05, color: '#FFFF30', atomicNumber: 16, valenceCount: 6, electronegativity: 2.58, maxBonds: 6,
-    meltingPoint: 3.8, boilingPoint: 6.5,
+    meltingPoint: 3.8, boilingPoint: 7.0,
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 6), ...assignOrbitals(3, 's', 2), ...assignOrbitals(3, 'p', 4)]
   },
   [AtomType.Chlorine]: { 
     mass: 35.5, charge: -1, radius: 1.0, color: '#1FF01F', atomicNumber: 17, valenceCount: 7, electronegativity: 3.16, maxBonds: 1,
-    meltingPoint: 1.5, boilingPoint: 2.5,
+    meltingPoint: 1.7, boilingPoint: 2.4,
     orbitals: [...assignOrbitals(1, 's', 2), ...assignOrbitals(2, 's', 2), ...assignOrbitals(2, 'p', 6), ...assignOrbitals(3, 's', 2), ...assignOrbitals(3, 'p', 5)]
   },
 };
@@ -145,8 +141,8 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
     name: 'Water (H2O)',
     atoms: [
       { type: AtomType.Oxygen, offset: new Vector3(0, 0, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(0.8, 0.6, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(-0.8, 0.6, 0) }
+      { type: AtomType.Hydrogen, offset: new Vector3(0.6, 0.4, 0) }, // Tighter packing
+      { type: AtomType.Hydrogen, offset: new Vector3(-0.6, 0.4, 0) }
     ],
     bonds: [
       { idxA: 0, idxB: 1, type: 'covalent', order: 1 },
@@ -157,8 +153,8 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
     name: 'Carbon Dioxide (CO2)',
     atoms: [
       { type: AtomType.Carbon, offset: new Vector3(0, 0, 0) },
-      { type: AtomType.Oxygen, offset: new Vector3(1.2, 0, 0) },
-      { type: AtomType.Oxygen, offset: new Vector3(-1.2, 0, 0) }
+      { type: AtomType.Oxygen, offset: new Vector3(0.9, 0, 0) }, // Tighter
+      { type: AtomType.Oxygen, offset: new Vector3(-0.9, 0, 0) }
     ],
     bonds: [
       { idxA: 0, idxB: 1, type: 'covalent', order: 2 }, 
@@ -169,10 +165,10 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
     name: 'Methane (CH4)',
     atoms: [
       { type: AtomType.Carbon, offset: new Vector3(0, 0, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(0.8, 0.8, 0.8) },
-      { type: AtomType.Hydrogen, offset: new Vector3(-0.8, -0.8, 0.8) },
-      { type: AtomType.Hydrogen, offset: new Vector3(-0.8, 0.8, -0.8) },
-      { type: AtomType.Hydrogen, offset: new Vector3(0.8, -0.8, -0.8) }
+      { type: AtomType.Hydrogen, offset: new Vector3(0.6, 0.6, 0.6) },
+      { type: AtomType.Hydrogen, offset: new Vector3(-0.6, -0.6, 0.6) },
+      { type: AtomType.Hydrogen, offset: new Vector3(-0.6, 0.6, -0.6) },
+      { type: AtomType.Hydrogen, offset: new Vector3(0.6, -0.6, -0.6) }
     ],
     bonds: [
       { idxA: 0, idxB: 1, type: 'covalent', order: 1 },
@@ -184,12 +180,12 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
   'ethene': {
     name: 'Ethene (C2H4)',
     atoms: [
-      { type: AtomType.Carbon, offset: new Vector3(-0.6, 0, 0) },
-      { type: AtomType.Carbon, offset: new Vector3(0.6, 0, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(-1.2, 0.9, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(-1.2, -0.9, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(1.2, 0.9, 0) },
-      { type: AtomType.Hydrogen, offset: new Vector3(1.2, -0.9, 0) },
+      { type: AtomType.Carbon, offset: new Vector3(-0.4, 0, 0) }, // Tighter Double Bond
+      { type: AtomType.Carbon, offset: new Vector3(0.4, 0, 0) },
+      { type: AtomType.Hydrogen, offset: new Vector3(-0.9, 0.7, 0) },
+      { type: AtomType.Hydrogen, offset: new Vector3(-0.9, -0.7, 0) },
+      { type: AtomType.Hydrogen, offset: new Vector3(0.9, 0.7, 0) },
+      { type: AtomType.Hydrogen, offset: new Vector3(0.9, -0.7, 0) },
     ],
     bonds: [
         { idxA: 0, idxB: 1, type: 'covalent', order: 2 }, 
@@ -202,8 +198,8 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
   'nitrogen_gas': {
       name: 'Nitrogen (N2)',
       atoms: [
-          { type: AtomType.Nitrogen, offset: new Vector3(-0.5, 0, 0) },
-          { type: AtomType.Nitrogen, offset: new Vector3(0.5, 0, 0) }
+          { type: AtomType.Nitrogen, offset: new Vector3(-0.35, 0, 0) }, // Tighter Triple Bond
+          { type: AtomType.Nitrogen, offset: new Vector3(0.35, 0, 0) }
       ],
       bonds: [
           { idxA: 0, idxB: 1, type: 'covalent', order: 3 } 
@@ -213,11 +209,11 @@ export const MOLECULE_TEMPLATES: Record<string, MoleculeTemplate> = {
     name: 'Salt (NaCl)',
     atoms: [
       { type: AtomType.Sodium, offset: new Vector3(0, 0, 0) },
-      { type: AtomType.Chlorine, offset: new Vector3(2.0, 0, 0) },
-      { type: AtomType.Sodium, offset: new Vector3(0, 2.0, 0) },
-      { type: AtomType.Chlorine, offset: new Vector3(2.0, 2.0, 0) },
-      { type: AtomType.Sodium, offset: new Vector3(2.0, 0, 2.0) },
-      { type: AtomType.Chlorine, offset: new Vector3(0, 0, 2.0) }
+      { type: AtomType.Chlorine, offset: new Vector3(1.6, 0, 0) },
+      { type: AtomType.Sodium, offset: new Vector3(0, 1.6, 0) },
+      { type: AtomType.Chlorine, offset: new Vector3(1.6, 1.6, 0) },
+      { type: AtomType.Sodium, offset: new Vector3(1.6, 0, 1.6) },
+      { type: AtomType.Chlorine, offset: new Vector3(0, 0, 1.6) }
     ],
     bonds: [
       { idxA: 0, idxB: 1, type: 'ionic', order: 1 },
@@ -291,13 +287,18 @@ export const createMoleculeFromTemplate = (key: string, position: Vector3): { at
               a2.charge = -1;
           }
       }
+      
+      const radiusSum = a1.radius + a2.radius;
+      let lengthMult = 0.75; // Default for single
+      if (tmplBond.order === 2) lengthMult = 0.65;
+      if (tmplBond.order === 3) lengthMult = 0.60;
 
       bonds.push({
           id: uuidv4(),
           atomA: atomIds[tmplBond.idxA],
           atomB: atomIds[tmplBond.idxB],
-          strength: (tmplBond.type === 'ionic' ? BOND_STRENGTH_IONIC : BOND_STRENGTH_COVALENT) * (tmplBond.order || 1), 
-          restLength: (a1.radius + a2.radius) * (1.0 - (tmplBond.order || 1) * 0.1), 
+          strength: (tmplBond.type === 'ionic' ? BOND_STRENGTH_IONIC : BOND_STRENGTH_COVALENT), 
+          restLength: radiusSum * lengthMult, 
           type: tmplBond.type,
           order: tmplBond.order || 1
       });

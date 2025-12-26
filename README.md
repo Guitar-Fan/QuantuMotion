@@ -4,6 +4,13 @@ QuantuMotion is an advanced, interactive 3D physics simulation designed to visua
 
 ## Development History
 
+### Version 1.3: Enhanced Bond Physics & High-Energy States
+*   **Bond Logic Overhaul:**
+    *   **Tighter Bonds:** Reduced bond rest lengths to better simulate atomic overlap (single bonds at 75% of radius sum, triple bonds at 60%).
+    *   **Stronger Interactions:** Significantly increased base bond strengths (Covalent: 1200, Ionic: 800) and implemented non-linear stiffness scaling based on bond order (Single vs Double vs Triple).
+    *   **Thermal Dissociation:** Implemented a probabilistic bond breaking model based on Thermal Energy vs Bond Energy, allowing strong bonds (like N2) to survive until much higher temperatures (~4000K-5000K).
+*   **Temperature Scale:** Expanded the simulation temperature range (0-50 units) to allow users to reach high-energy plasma states necessary to break triple bonds.
+
 ### Version 1.2: Enhanced Physics & Analysis Tools
 *   **Physics Engine Tuning:** 
     *   Significantly increased the Coulomb constant (`K=350`) to create "snappier," more noticeable electrostatic attraction and repulsion between ions.

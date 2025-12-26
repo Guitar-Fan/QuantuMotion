@@ -18,6 +18,7 @@ export enum AtomType {
 
 export type OrbitalType = '1s' | '2s' | '2px' | '2py' | '2pz' | '3s' | '3px' | '3py' | '3pz';
 export type MatterState = 'Solid' | 'Liquid' | 'Gas' | 'Plasma';
+export type ToolMode = 'cursor' | 'lightning' | 'blast' | 'vortex';
 
 export interface ElectronState {
   id: string;
@@ -73,6 +74,7 @@ export interface SimulationState {
   magneticField: Vector3; // B-field vector (Tesla-equivalent)
   showFieldVectors: boolean; // Visualize E-field grid
   funMode: boolean; // Toggles Emoji/Cartoon mode
+  activeTool: ToolMode; // Current interactive tool
 }
 
 export interface SelectionItem {
